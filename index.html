@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+  <meta name="keywords" content="remark,remarkjs,markdown,slideshow,presentation"/>
+  <meta name="description" content="A simple, in-browser, markdown-driven slideshow tool."/>
+  <title>Java Bytecode Instrumentation</title>
+  <style type="text/css">
+    @import url(//fonts.googleapis.com/css?family=Droid+Serif);
+    @import url(//fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+    @import url(//fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+    body {
+      font-family: 'Droid Serif';
+    }
+
+    h1, h2, h3 {
+      font-family: 'Yanone Kaffeesatz';
+      font-weight: 400;
+      margin-bottom: 0;
+    }
+
+    .remark-slide-content h1 {
+      font-size: 3em;
+    }
+
+    .remark-slide-content h2 {
+      font-size: 2em;
+    }
+
+    .remark-slide-content h3 {
+      font-size: 1.6em;
+    }
+
+    .footnote {
+      position: absolute;
+      bottom: 3em;
+    }
+
+    li p {
+      line-height: 1.25em;
+    }
+
+    .red {
+      color: #fa0000;
+    }
+
+    .large {
+      font-size: 2em;
+    }
+
+    a, a > code {
+      color: black;
+      text-decoration: none;
+    }
+
+    code {
+      -moz-border-radius: 5px;
+      -web-border-radius: 5px;
+      background: #e7e8e2;
+      border-radius: 5px;
+      padding: 20px !important;
+    }
+
+    .remark-code, .remark-inline-code {
+      font-family: 'Ubuntu Mono';
+      font-size: 20px;
+    }
+
+    .remark-code-line-highlighted {
+      background-color: #373832;
+    }
+
+    .pull-left {
+      float: left;
+      width: 47%;
+    }
+
+    .pull-right {
+      float: right;
+      width: 47%;
+    }
+
+    .pull-right ~ p {
+      clear: both;
+    }
+
+    #slideshow .slide .content code {
+      font-size: 0.8em;
+    }
+
+    #slideshow .slide .content pre code {
+      font-size: 0.9em;
+      padding: 15px;
+    }
+
+    .inverse {
+      background: #272822;
+      color: #777872;
+      text-shadow: 0 0 20px #333;
+    }
+
+    .inverse h1, .inverse h2 {
+      color: #f3f3f3;
+      line-height: 0.8em;
+    }
+
+    /* Slide-specific styling */
+    #slide-inverse .footnote {
+      bottom: 12px;
+      left: 20px;
+    }
+
+    #slide-how .slides {
+      font-size: 0.9em;
+      position: absolute;
+      top: 151px;
+      right: 140px;
+    }
+
+    #slide-how .slides h3 {
+      margin-top: 0.2em;
+    }
+
+    #slide-how .slides .first, #slide-how .slides .second {
+      padding: 1px 20px;
+      height: 90px;
+      width: 120px;
+      -moz-box-shadow: 0 0 10px #777;
+      -webkit-box-shadow: 0 0 10px #777;
+      box-shadow: 0 0 10px #777;
+    }
+
+    #slide-how .slides .first {
+      background: #fff;
+      position: absolute;
+      top: 20%;
+      left: 20%;
+      z-index: 1;
+    }
+
+    #slide-how .slides .second {
+      position: relative;
+      background: #fff;
+      z-index: 0;
+    }
+
+    /* Two-column layout */
+    .left-column {
+      color: #777;
+      width: 23%;
+      height: 92%;
+      float: left;
+    }
+
+    .left-column h2:last-of-type, .left-column h3:last-child {
+      color: #000;
+    }
+
+    .right-column {
+      width: 75%;
+      float: right;
+      padding-top: 1em;
+    }
+
+    .vcenter h1, .vcenter h2 {
+      margin-top: 0;
+    }
+
+    /* more horizontal realestate */
+    .remark-slide-content {
+      padding-left: 2em;
+      padding-right: 2em;
+      padding-top: 0.5em;
+    }
+
+    .right-column-incremental {
+      width: 75%;
+      float: right;
+    }
+
+    .section-top-padding {
+      padding-top: 30px;
+    }
+
+	.super-mini .remark-code {
+	  font-size: 7px;
+	  padding-left: 10px;
+	}
+	
+	.smaller .remark-code {
+	  font-size: 18px;
+	}
+    
+    .libraries {
+      padding-top: 10px;
+      font-size: 16px;
+    }
+    
+    .libraries td {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+	
+	.example-usage {
+	  margin-top: -20px;
+	}
+	
+	.example-code code {
+	  background: #666 !important;
+	}
+
+	.example-code .remark-code-line-highlighted {
+	  background: #888;
+	}
+    
+    .jigsaw1-image img {
+      padding-top: 30px;
+      padding-left: 10px;
+      height: 550px;
+    }
+    
+    .jigsaw2-image img {
+      padding-top: 60px;
+      height: 450px;
+    }
+    
+    .copyright {
+      font-size: 12px;
+    }
+    
+    .incremental-bullets ul {
+      margin: 0;
+    }
+    
+    li {
+      margin-top: 5px;
+    }
+    
+    .narrow-bullets li {
+      margin-top: 0;
+    }
+    
+    .padding-top-5 {
+      padding-top: 5px;
+    }
+    
+    .padding-top-40 {
+      padding-top: 40px;
+    }
+
+    .padding-top-50 {
+      padding-top: 50px;
+    }
+
+    .padding-top-100 {
+      padding-top: 100px;
+    }
+    
+    .padding-top-150 {
+      padding-top: 150px;
+    }
+    
+    .padding-left-50 {
+      padding-left: 50px;
+    }
+    
+    .center-and-width-600 {
+      text-align: center;
+      width: 540px;
+      margin: 0 auto;
+    }
+    
+    .center-and-width-500 {
+      text-align: center;
+      width: 500px;
+      margin: 0 auto;
+    }
+    
+    .larger {
+      font-size: 32px;
+    }
+    
+    .margin-top-10 h2 {
+      margin-top: 10px;
+    }
+
+    .margin-top-20 h2 {
+      margin-top: 20px;
+    }
+
+    .margin-top-50 h2 {
+      margin-top: 50px;
+    }
+    
+    .align-first-right tr td:first-of-type {
+      //text-align: right;
+      //padding-right: 20px;
+    }
+    
+    .padding-right-td-20 tr td:first-of-type {
+      padding-right: 20px;
+    }
+    </style>
+</head>
+<body>
+<textarea id="source">
+class: center, middle
+.vcenter[
+## How
+# Java Bytecode Instrumentation
+## can be safe and user-friendly
+]
+
+
+---
+## Java 5 (2004)
+
+```
+java -javaagent:myjavaagent.jar -jar myapp.jar
+```
+
+<br>
+
+```
+class MyClassFileTransformer implements ClassFileTransformer {
+
+  public byte[] transform(ClassLoader loader,
+                          String className,
+                          byte[] classBytes) {
+        
+    ...
+
+  }
+
+}
+
+```
+
+
+
+???
+
+Java 5 introduced the concept of a "java agent".
+
+Before this, agents had to be written in C, using the JVM Profiler Interface.
+
+This opened up a whole new world of writing Java to instrument Java.
+
+The way this worked (and still works to this day) is that you need to register your java agent on the command line using the -javaagent arg.
+
+In your java agent code, you can then register ClassFileTransformers with the JVM.
+
+And any time the JVM loads a class, it gives your ClassFileTransformer a chance to modify the class bytes before it loads the class.
+
+What can you do with this?
+
+Well, you can do whatever you want, and completely manipulate an application's code in any way that you want.
+
+So writing managed Java code to instrument Java is certainly saf-er and more user-friendly compared to writing it in C.
+
+But that was a low bar.
+
+And the "do whatever you want" with the class bytes?
+
+Yeah, that's not safe *or* user-friendly.
+
+
+---
+## ASM (2002)
+
+```
+class MyClassFileTransformer implements ClassFileTransformer {
+
+  public byte[] transform(ClassLoader loader,
+                          String className,
+                          byte[] classBytes) {
+
+    ClassReader reader = new ClassReader(classBytes);
+    ClassWriter writer = new ClassWriter();
+    MyClassVisitor visitor = new MyClassVisitor(writer);
+    reader.accept(visitor);
+    return writer.toByteArray();
+  }
+}
+
+class MyClassVisitor extends ClassVisitor {
+  ...
+}
+
+class MyMethodVisitor extends MethodVisitor {
+  ...
+}
+```
+
+???
+
+So.. ASM to the rescue!
+
+Talk through the code.
+
+You may have noticed, ASM predates Java 5, because people were already playing with bytecode transformation in various ways before Java added the JVM-wide ClassFileTransformer hook.
+
+
+---
+
+## ASM (2002)
+
+```
+class MyClassVisitor extends ClassVisitor {
+
+  public MethodVisitor visitMethod(String name, String descriptor) {
+    int numArgs = Type.getArgumentTypes(desc).length;
+    return new MyMethodVisitor(super.visitMethod(name, descriptor),
+                               numArgs);
+  }
+}
+
+class MyMethodVisitor extends MethodVisitor {
+
+  int numArgs;
+
+  public void visitCode() {
+    super.visitCode();
+    for (int i = 0; i &lt; numArgs; i++) {
+      visitFieldInsn(GETSTATIC, "java/lang/System", "out",
+                     "Ljava/io/PrintStream;");
+      visitVarInsn(ALOAD, 1);
+      visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream",
+                      "println", "(Ljava/lang/Object;)V");
+    }
+  }
+}
+```
+
+???
+
+Talk through the code.
+
+Btw, I'd hardly call this writing Java to instrument Java.
+
+It's really more like using writing Bytecode to instrument Java.
+
+Also, I promised safety. This is definitely not that either.
+
+
+---
+## AspectJ 5 (2004)
+
+```
+@Pointcut("execution(" +
+          "void javax.servlet.Servlet.service(" +
+                           "javax.servlet.ServletRequest," +
+                           "javax.servlet.ServletResponse)" +
+          ")")
+void servletPointcut() {}
+
+@Around("servletPointcut()" +
+        " && !cflowbelow(servletPointcut())" +
+        " && target(target)" +
+        " && args(request, response)")
+public Object aroundTopLevelServletPointcut(ProceedingJoinPoint joinPoint,
+                                            Object target,
+                                            ServletRequest request,
+                                            ServletResponse request) {
+
+  return joinPoint.proceed();
+
+}
+```
+
+???
+
+AspectJ tackled this issue of writing real Java to instrument Java.
+
+Talk through the code.
+
+
+---
+## Glowroot APM (2012)
+
+```
+@Pointcut(className = "javax.servlet.Servlet",
+          methodName = "service",
+          methodParameterTypes = { "javax.servlet.ServletRequest",
+                                   "javax.servlet.ServletResponse"}
+          nestingGroup = "servlet")
+class ServletAdvice {
+  @OnBefore
+  static Span onBefore(@BindParameter ServletRequest request,
+                       ThreadContext context) { ...
+  }
+  @OnReturn
+  static void onReturn(@BindParameter ServletRequest request,
+                       @BindParameter ServletResponse response,
+                       @BindTraveler Span span,
+                       ThreadContext context) { ...
+  }
+  @OnThrow
+  static void onThrow(@BindParameter ServletRequest request,
+                      @BindParameter ServletResponse response,
+                      @BindThrowable Throwable throwable,
+                      @BindTraveler Span span,
+                      ThreadContext context) { ...
+  }
+}
+```
+
+???
+
+Full disclosure here. The other projects I'm talking about today are super successful.
+
+This project is only moderately successful at best.
+
+It's only here because I wrote it, and like to talk about it :-).
+
+And because it shows that several people were thinking about these problems.
+
+So, Glowroot is a Java APM tool, and so a big part of that is instrumentation.
+
+Talk through the code.
+
+
+---
+## ByteBuddy (2016)
+
+```
+builder.type(hasSuperType(named("javax.servlet.Servlet")))
+       .transform(new ForAdvice()
+         .withExceptionHandler(...)
+         .advice(named("service")
+                .and(takesArgument(0, named("javax.servlet.ServletRequest")))
+                .and(takesArgument(1, named("javax.servlet.ServletResponse"))),
+                "ServletAdvice"));
+
+class ServletAdvice {
+
+  @Advice.OnMethodEnter(suppress = Throwable.class)
+  static Span onEnter(@Advice.Argument(0) ServletRequest request) { ...
+  }
+
+  @Advice.OnMethodExit(onThrowable = Throwable.class,
+                       suppress = Throwable.class)
+  static void onExit(@Advice.Argument(1) ServletResponse response,
+                     @Advice.Thrown Throwable throwable,
+                     @Advice.Enter Span span) { ...
+  }
+}
+```
+
+???
+
+So, ByteBuddy really moved the Java bytecode instrumentation story forward.
+
+It provided similar ease of use to Glowroot's embedded instrumentation engine, in a very flexible, general purpose instrumentation library.
+
+Talk through the code.
+
+
+---
+class: center, middle
+.vcenter[
+# User-friendly ☑
+<br>
+# But is it safe?
+]
+
+
+---
+## What could go wrong here?
+
+```
+builder.type(hasSuperType(named("javax.servlet.Servlet")))
+       .transform(new ForAdvice()
+         .withExceptionHandler(...)
+         .advice(named("service")
+                .and(takesArgument(0, named("javax.servlet.ServletRequest")))
+                .and(takesArgument(1, named("javax.servlet.ServletResponse"))),
+                "ServletAdvice"));
+
+class ServletAdvice {
+
+  @Advice.OnMethodEnter(suppress = Throwable.class)
+  static Span onEnter(@Advice.Argument(0) ServletRequest request) {
+
+    String userAgent = request.getHeader("User-Agent");
+    ...
+  }
+
+  ...
+}
+```
+
+???
+
+Gets to general issue of dealing with different versions of instrumented library
+
+
+---
+## Library shape matcher (Datadog 2018)
+
+```
+builder.type(hasSuperType(named("javax.servlet.Servlet")))
+       .and(new LibraryShapeMatcher())
+       .transform(new ForAdvice()
+         .withExceptionHandler(...)
+         .advice(named("service")
+                .and(takesArgument(0, named("javax.servlet.ServletRequest")))
+                .and(takesArgument(1, named("javax.servlet.ServletResponse"))),
+                "ServletAdvice"));
+
+class ServletAdvice {
+
+  @Advice.OnMethodEnter(suppress = Throwable.class)
+  static Span onEnter(@Advice.Argument(0) ServletRequest request) {
+
+    String userAgent = request.getHeader("User-Agent");
+    ...
+  }
+
+  ...
+
+  // auto-generated at build time
+  static Matcher getLibraryShapeMatcher() { ...
+  }
+}
+```
+
+???
+
+Talk through the code.
+
+auto-generated using ASM of course!
+
+
+---
+## OpenTelemetry Java Auto-Instrumentation (2020)
+
+.libraries[
+|                           |                    |                           |                      |
+|---------------------------|--------------------|---------------------------|----------------------|
+| Akka HTTP                 | 10.0+              | JSP                       | 2.3+                 |
+| Apache HttpAsyncClient    | 4.0+               | Kafka                     | 0.11+                |
+| Apache HttpClient         | 2.0+               | Lettuce                   | 4.0+                 |
+| AWS SDK                   | 1.11.x and 2.2.0+  | Log4j                     | 1.1+                 |
+| Cassandra Driver          | 3.0+               | Logback                   | 1.0+                 |
+| Couchbase Client          | 2.0+ (not 3.x yet) | MongoDB Drivers           | 3.3+                 |
+| Dropwizard Views          | 0.7+               | Netty                     | 3.8+                 |
+| Elasticsearch API         | 2.0+ (not 7.x yet) | OkHttp                    | 3.0+                 |
+| Elasticsearch REST Client | 5.0+               | Play                      | 2.3+ (not 2.8.x yet) |
+| Finatra                   | 2.9+               | Play WS                   | 1.0+                 |
+| Geode Client              | 1.4+               | RabbitMQ Client           | 2.7+                 |
+| Google HTTP Client        | 1.19+              | Ratpack                   | 1.5+                 |
+| Grizzly                   | 2.0+               | Reactor                   | 3.1+                 |
+| gRPC                      | 1.5+               | Rediscala                 | 1.8+                 |
+| Hibernate                 | 3.3+               | RMI                       | Java 7+              |
+| HttpURLConnection         | Java 7+            | RxJava                    | 1.0+                 |
+| Hystrix                   | 1.4+               | Servlet                   | 2.3+                 |
+| java.util.logging         | Java 7+            | Spark Web Framework       | 2.3+                 |
+| JAX-RS                    | 0.5+               | Spring Data               | 1.8+                 |
+| JAX-RS Client             | 2.0+               | Spring Scheduling         | 3.1+                 |
+| JDBC                      | Java 7+            | Spring Servlet MVC        | 3.1+                 |
+| Jedis                     | 1.4+               | Spring Webflux            | 5.0+                 |
+| Jetty                     | 8.0+               | Spymemcached              | 2.12+                |
+| JMS                       | 1.1+               | Twilio                    | 6.6+                 |
+]
+
+???
+
+Testing
+
+
+---
+class: center, middle
+.vcenter[
+## More topics
+# Test harness
+# Shading
+# Helper classes
+]
+
+
+---
+class: center, middle
+.vcenter[
+## (the end)
+# Questions
+]
+
+
+
+</textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+  var slideshow = remark.create({
+      highlightStyle: 'tomorrow-night-bright',
+      highlightLanguage: 'java'
+    }) ;
+</script>
+</body>
+</html>
